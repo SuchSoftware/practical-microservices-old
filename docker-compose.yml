@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  practical_microservices_db:
+    image: postgres:10.3
+    environment:
+      - POSTGRES_DB=practical_microservices
+    ports:
+      - '0.0.0.0:5432:5432'
+  eventide:
+    image: ethangarofolo/eventide-message-store-postgres
+    ports:
+      - '0.0.0.0:5433:5432'
