@@ -16,6 +16,8 @@ This workshop uses [Node.js](https://nodejs.org/en/) for the code and [Docker](h
 1. Run databases 
   * `docker-compose rm -sf && docker-compose up`
 2. Run verification script from this repo
+  * `nvm use`
+  * `npm install`
   * `node script/verify-installation.js`
   * Your results should look something like:
 
