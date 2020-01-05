@@ -11,6 +11,10 @@ This workshop uses [Node.js](https://nodejs.org/en/) for the code and [Docker](h
     * If you're on Windows, I've heard good things about [`nvm-windows`](https://github.com/coreybutler/nvm-windows)
 2. [Install Docker for your platform](https://docs.docker.com/v17.09/engine/installation/)
 
+## Install Project Dependencies
+
+From within the project folder, run `npm install`
+
 ## Verify Installation
 
 1. Run databases 
