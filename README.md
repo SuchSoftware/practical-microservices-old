@@ -37,3 +37,7 @@ Read back: {
   "time": "2019-12-15T14:32:46.135Z"
 }
 ```
+
+## Other Useful Software
+
+* A database view, such as TablePlus (https://tableplus.com/).  It absolutely does not have to be this particular one, but you will benefit greatly from having something that will let you view the contents of the databases started in the `docker-compose.yml` file.
