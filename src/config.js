@@ -24,7 +24,7 @@ function createConfig ({ env }) {
   const homeApplication = createHomeApplication()
 
   // Components
-  const moveFileComponent = createMoveFileComponent()
+  const moveFileComponent = createMoveFileComponent({ messageStore })
 
   // Aggregators
   const viewCountAggregator = createViewCountAggregator()
