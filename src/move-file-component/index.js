@@ -18,9 +18,25 @@ function moveFile (source, destination) {
 function createHandlers ({ messageStore }) {
   return {
     Move (move) {
-      // Write some code here to move the file
+      moveFile(move.data.source, move.data.destination)
 
-      return Promise.resolve(true)
+      const moved = {
+        id: uuid(),
+        type: 'Moved',
+        metadata: {
+          traceId: move.metadata.traceId,
+          originStreamName: move.metadata.originStreamName
+        },
+        data: {
+          fileId: move.data.fileId,
+          source: move.data.source,
+          destination: move.data.destination,
+          processedTime: new Date().toISOString()
+        }
+      }
+      const streamName = `moveFile-${move.data.fileId}`
+
+      return messageStore.write(streamName, moved)
     }
   }
 }
