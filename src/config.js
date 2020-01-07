@@ -7,6 +7,7 @@ const createHomeApplication = require('./home-application')
 const createPostgresClient = require('./postgres-client')
 const createMessageStore = require('./message-store')
 const createMoveFileComponent = require('./move-file-component')
+const createTranscodeComponent = require('./transcode-component')
 const createViewCountAggregator = require('./view-count-aggregator')
 
 // Even the configuration has a dependency, namely the run-time environment.
@@ -25,6 +26,7 @@ function createConfig ({ env }) {
 
   // Components
   const moveFileComponent = createMoveFileComponent({ messageStore })
+  const transcodeComponent = createTranscodeComponent({ messageStore })
 
   // Aggregators
   const viewCountAggregator = createViewCountAggregator()
@@ -37,6 +39,7 @@ function createConfig ({ env }) {
     homeApplication,
     messageStore,
     moveFileComponent,
+    transcodeComponent,
     viewCountAggregator
   }
 }
