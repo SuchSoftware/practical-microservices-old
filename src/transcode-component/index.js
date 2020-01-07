@@ -3,7 +3,7 @@ const uuid = require('uuid/v4')
 const projection = require('./projection')
 
 // Returns a url to the transcoded file
-function transcode (source) {
+function transcodeFile (source) {
   // More simulation shenanigans
   console.log('If real transcoding were going on, you bet it would be here')
 
@@ -21,14 +21,20 @@ function createHandlers ({ messageStore }) {
       // 3. Which message store function do you use to, um, fetch an entity
       // from the message store?
       // 4. Don't forget to fill out the projection in ./projection.js
-      const transcoding = messageStore.WHAT_FUNCTION(streamName, projection)
+      const transcoding = await messageStore.WHAT_FUNCTION(
+        streamName,
+        projection
+      )
 
       // 5. Make it idempotent
-      if (true) {
+      if (false) {
+        console.log(`(${transcode.id}): Already transcoded. Skipping.`)
+
+        return Promise.resolve(true)
       }
 
       // 6. Do the actual work.  This one is done for you.
-      const transcodedUri = transcode(transcode.data.source)
+      const transcodedUri = transcodeFile(transcode.data.source)
 
       const transcoded = {
         id: uuid(),
