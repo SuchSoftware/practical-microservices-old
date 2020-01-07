@@ -47,7 +47,7 @@ function createHandlers ({ messageStore }) {
       }
       const streamName = `moveFile-${move.data.fileId}`
 
-      return messageStore.write(streamName, moved)
+      return messageStore.write(streamName, moved, file.version)
     }
   }
 }
