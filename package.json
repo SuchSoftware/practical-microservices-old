@@ -27,6 +27,7 @@
     "express": "^4.17.1",
     "pg": "^7.14.0",
     "prettier-standard": "^16.1.0",
+    "pug": "^2.0.4",
     "snakecase-keys": "^3.1.0",
     "uuid": "^3.3.3"
   },
