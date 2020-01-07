@@ -1,6 +1,8 @@
 const fs = require('fs')
 const uuid = require('uuid/v4')
 
+const projection = require('./projection')
+
 // Okay, this doesn't actually move a file, but the point of the workshop
 // is to show the flow of data through an autonomous services architecture and
 // not to actually take on YouTube.
@@ -17,7 +19,16 @@ function moveFile (source, destination) {
 // Fleshing out these handlers is the main activity of the workshop.
 function createHandlers ({ messageStore }) {
   return {
-    Move (move) {
+    async Move (move) {
+      const moveFileStreamName = `moveFile-${move.data.fileId}`
+      const file = await messageStore.fetch(moveFileStreamName, projection)
+
+      if (file.isMoved) {
+        console.log(`Message ${move.id} already handled.  Skipping.`)
+
+        return true
+      }
+
       moveFile(move.data.source, move.data.destination)
 
       const moved = {

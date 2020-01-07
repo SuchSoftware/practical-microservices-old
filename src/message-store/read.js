@@ -32,6 +32,10 @@ const getAllMessagesSql = `
  * @returns {object} The result of projecting the events
  */
 function project (events, projection) {
+  if (!projection.$init) {
+    throw new Error('A projection must supply an $init value')
+  }
+
   return events.reduce((entity, event) => {
     if (!projection[event.type]) {
       return entity
@@ -76,14 +80,13 @@ function createRead ({ db }) {
       // Entity streams have a dash
       query = getStreamMessagesSql
       values = [streamName, fromPosition, maxMessages]
-    } else { 
+    } else {
       // Category streams do not have a dash
       query = getCategoryMessagesSql
       values = [streamName, fromPosition, maxMessages]
     }
 
-    return db.query(query, values)
-      .then(res => res.rows.map(deserializeMessage))
+    return db.query(query, values).then(res => res.rows.map(deserializeMessage))
   }
 
   /**
@@ -93,7 +96,8 @@ function createRead ({ db }) {
    * @returns {Promise<object} A Promise resolving to the last message
    */
   function readLastMessage (streamName) {
-    return db.query(getLastMessageSql, [ streamName ])
+    return db
+      .query(getLastMessageSql, [streamName])
       .then(res => deserializeMessage(res.rows[0]))
   }
 
