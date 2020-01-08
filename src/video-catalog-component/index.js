@@ -66,6 +66,21 @@ function createEventHandlers ({ messageStore }) {
       const commandStream = `moveFile:command-${videoId}`
 
       return messageStore.write(commandStream, move)
+    },
+
+    async Moved (moved) {
+      // 1. Load & project the video entity
+      //   - You can get the streamName from moved.streamName
+      const streamName = moved.streamName
+
+      // 2. Our goal in this handler is to kick off the transcoding job.
+      //   - Which property of the video entity do we use for idempotence
+      //     in this step?
+
+      // 3. If we haven't already handled it, write a Transcode command
+      // for the transcode-component
+
+      return true
     }
   }
 }
@@ -76,12 +91,35 @@ function createMoveFileEventHandlers ({ messageStore }) {
       // 1. Make sure it's one of ours
       const [originCategory, _] = moved.metadata.originStreamName.split('-')
 
+      if (originCategory !== 'videoCatalog') {
+        return true
+      }
+
       // 2. Fetch the entity and make the handler idempotent
       //   - Where can we find the streamName for the video entity?
+      const streamName = moved.metadata.originStreamName
+      const video = await messageStore.fetch(streamName, projection)
+
+      if (video.isMoved) {
+        console.log(`(${moved.id}) Video already moved. Skipping`)
+
+        return true
+      }
 
       // 3. Write a Moved event to our stream
+      const videoMoved = {
+        id: uuid(),
+        type: 'Moved',
+        metadata: {
+          traceId: moved.metadata.traceId
+        },
+        data: {
+          videoId: video.id,
+          destination: moved.data.destination
+        }
+      }
 
-      return true
+      return messageStore.write(streamName, videoMoved)
     }
   }
 }
