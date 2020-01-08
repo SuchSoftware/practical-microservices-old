@@ -4,9 +4,10 @@
 // system.
 
 const createHomeApplication = require('./home-application')
-const createPostgresClient = require('./postgres-client')
+const createKnexClient = require('./knex-client')
 const createMessageStore = require('./message-store')
 const createMoveFileComponent = require('./move-file-component')
+const createPostgresClient = require('./postgres-client')
 const createTranscodeComponent = require('./transcode-component')
 const createVideoCatalogComponent = require('./video-catalog-component')
 const createViewCountAggregator = require('./view-count-aggregator')
@@ -22,8 +23,15 @@ function createConfig ({ env }) {
   // Postgres™.
   const messageStore = createMessageStore({ db: postgresClient })
 
+  const knexClient = createKnexClient({
+    connectionString: env.databaseUrl
+  })
+
   // Applications
-  const homeApplication = createHomeApplication()
+  const homeApplication = createHomeApplication({
+    db: knexClient,
+    messageStore
+  })
 
   // Components
   const moveFileComponent = createMoveFileComponent({ messageStore })
@@ -42,6 +50,7 @@ function createConfig ({ env }) {
 
   return {
     components,
+    db: knexClient,
     env,
     homeApplication,
     messageStore,
