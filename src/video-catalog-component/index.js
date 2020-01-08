@@ -100,6 +100,35 @@ function createEventHandlers ({ messageStore }) {
       const commandStreamName = `transcode:command-${video.videoId}`
 
       return messageStore.write(commandStreamName, transcode)
+    },
+
+    async Transcoded (transcoded) {
+      // 1. Load & project the video entity
+      //   - You can get the streamName from moved.streamName
+      const streamName = transcoded.streamName
+      const video = await messageStore.fetch(streamName, projection)
+
+      // 2. Our goal in this handler is to say that it has been cataloged
+      //   - Which property of the video entity do we use for idempotence
+      //     in this step?
+      if (video.isCataloged) {
+        console.log(`(${transcoded.id}) Video already cataloged. Skipping`)
+
+        return true
+      }
+
+      // 3. If we haven't already handled it, write a Cataloged event to
+      // ourselves
+      const cataloged = {
+        id: uuid(),
+        type: 'Cataloged',
+        metdata: {
+          traceId: transcoded.metadata.traceId
+        },
+        data: {}
+      }
+
+      return messageStore.write(streamName, cataloged)
     }
   }
 }
