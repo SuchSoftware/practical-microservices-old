@@ -10,24 +10,55 @@ const projection = require('./projection')
 function createCommandHandlers ({ messageStore }) {
   return {
     async Catalog (catalog) {
-      // Handle the catalog command
-      // We want to drive the process from events in `videoCatalog` streams.
-      // So, copy the command into a `Received` event in our entity stream.
+      const videoId = catalog.data.videoId
+      const videoStreamName = `videoCatalog-${videoId}`
+      const video = await messageStore.fetch(videoStreamName, projection)
 
-      // 1. Fetch the video entity from the message store
+      if (video.isReceived) {
+        console.log(`(${catalog.id}) Video already received. Skipping`)
 
-      // 2. Make the handler idempotent by checking to see if the video has
-      // already been received.
+        return true
+      }
 
-      // 3. If we haven't, then write a `Received` event
+      const received = {
+        id: uuid(),
+        type: 'Received',
+        metadata: {
+          traceId: catalog.metadata.traceId
+        },
+        data: {
+          videoId: catalog.data.videoId,
+          source: catalog.data.source
+        }
+      }
 
-      return Promise.resolve(true)
+      return messageStore.write(videoStreamName, received)
+    }
+  }
+}
+
+function createEventHandlers ({ messageStore }) {
+  return {
+    async Received (received) {
+      // This is where we'll kick off the file move
+
+      // 1. Load the entity
+
+      // 2. Make the handler idempotent.  Which value from the projection would
+      // tell us we don't need to move the file?
+
+      // 3. Write q Move command for move-file.
+      //   - Use our entity id as the id for the move command stream name
+      //   - Set the originStreamName in metadata
+
+      return true
     }
   }
 }
 
 function createComponent ({ messageStore }) {
   const commandHandlers = createCommandHandlers({ messageStore })
+  const eventHandlers = createEventHandlers({ messageStore })
 
   function start () {
     console.log('Starting video catalog component')
@@ -35,6 +66,7 @@ function createComponent ({ messageStore }) {
 
   return {
     commandHandlers,
+    eventHandlers,
     start
   }
 }
