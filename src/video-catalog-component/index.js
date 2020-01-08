@@ -40,16 +40,46 @@ function createCommandHandlers ({ messageStore }) {
 function createEventHandlers ({ messageStore }) {
   return {
     async Received (received) {
-      // This is where we'll kick off the file move
+      const videoId = received.data.videoId
+      const streamName = `videoCatalog-${videoId}`
+      const video = await messageStore.fetch(streamName, projection)
 
-      // 1. Load the entity
+      if (video.isMoved) {
+        console.log(`(${received.id}) Video already moved. Skipping`)
 
-      // 2. Make the handler idempotent.  Which value from the projection would
-      // tell us we don't need to move the file?
+        return true
+      }
 
-      // 3. Write q Move command for move-file.
-      //   - Use our entity id as the id for the move command stream name
-      //   - Set the originStreamName in metadata
+      const move = {
+        id: uuid(),
+        type: 'Move',
+        metadata: {
+          traceId: received.metadata.traceId,
+          originStreamName: streamName
+        },
+        data: {
+          fileId: videoId,
+          source: received.data.source,
+          destination: `permanent/path/${received.data.source}`
+        }
+      }
+      const commandStream = `moveFile:command-${videoId}`
+
+      return messageStore.write(commandStream, move)
+    }
+  }
+}
+
+function createMoveFileEventHandlers ({ messageStore }) {
+  return {
+    async Moved (moved) {
+      // 1. Make sure it's one of ours
+      const [originCategory, _] = moved.metadata.originStreamName.split('-')
+
+      // 2. Fetch the entity and make the handler idempotent
+      //   - Where can we find the streamName for the video entity?
+
+      // 3. Write a Moved event to our stream
 
       return true
     }
@@ -59,6 +89,7 @@ function createEventHandlers ({ messageStore }) {
 function createComponent ({ messageStore }) {
   const commandHandlers = createCommandHandlers({ messageStore })
   const eventHandlers = createEventHandlers({ messageStore })
+  const moveFileEventHandlers = createMoveFileEventHandlers({ messageStore })
 
   function start () {
     console.log('Starting video catalog component')
@@ -67,6 +98,7 @@ function createComponent ({ messageStore }) {
   return {
     commandHandlers,
     eventHandlers,
+    moveFileEventHandlers,
     start
   }
 }
