@@ -15,22 +15,19 @@ function createHandlers ({ messageStore }) {
   return {
     async Transcode (transcode) {
       // 1. Where do you get the id?
-      const transcodeId = ''
+      const transcodeId = transcode.data.transcodeId
       // 2. What is the stream name where
-      const streamName = ''
+      const streamName = `transcode-${transcodeId}`
       // 3. Which message store function do you use to, um, fetch an entity
       // from the message store?
       // 4. Don't forget to fill out the projection in ./projection.js
-      const transcoding = await messageStore.WHAT_FUNCTION(
-        streamName,
-        projection
-      )
+      const transcoding = await messageStore.fetch(streamName, projection)
 
       // 5. Make it idempotent
-      if (false) {
+      if (transcoding.isTranscoded) {
         console.log(`(${transcode.id}): Already transcoded. Skipping.`)
 
-        return Promise.resolve(true)
+        return true
       }
 
       // 6. Do the actual work.  This one is done for you.
@@ -40,6 +37,7 @@ function createHandlers ({ messageStore }) {
         id: uuid(),
         type: 'Transcoded',
         metadata: {
+          originStreamName: transcode.metadata.originStreamName,
           traceId: transcode.metadata.traceId
         },
         data: {
@@ -52,7 +50,7 @@ function createHandlers ({ messageStore }) {
 
       // Instead of just return an empty Promise, write `transcoded` to the
       // message store, rturning the resulting Promise.
-      return Promise.resolve(true)
+      return messageStore.write(streamName, transcoded)
     }
   }
 }
@@ -60,8 +58,16 @@ function createHandlers ({ messageStore }) {
 function createComponent ({ messageStore }) {
   const handlers = createHandlers({ messageStore })
 
+  const subscription = messageStore.createSubscription({
+    streamName: 'transcode:command',
+    handlers,
+    subscriberId: 'moveFileComponent'
+  })
+
   function start () {
     console.log('Starting transcode component')
+
+    subscription.start()
   }
 
   return {

@@ -60,7 +60,7 @@ function createEventHandlers ({ messageStore }) {
         data: {
           fileId: videoId,
           source: received.data.source,
-          destination: `permanent/path/${received.data.source}`
+          destination: `tmp/${received.data.source}`
         }
       }
       const commandStream = `moveFile:command-${videoId}`
@@ -72,7 +72,7 @@ function createEventHandlers ({ messageStore }) {
       // 1. Load & project the video entity
       //   - You can get the streamName from moved.streamName
       const streamName = moved.streamName
-      const video = await messageStore.fetch(streamName)
+      const video = await messageStore.fetch(streamName, projection)
 
       // 2. Our goal in this handler is to kick off the transcoding job.
       //   - Which property of the video entity do we use for idempotence
@@ -88,7 +88,7 @@ function createEventHandlers ({ messageStore }) {
       const transcode = {
         id: uuid(),
         type: 'Transcode',
-        metdata: {
+        metadata: {
           traceId: moved.metadata.traceId,
           originStreamName: streamName
         },
@@ -122,7 +122,7 @@ function createEventHandlers ({ messageStore }) {
       const cataloged = {
         id: uuid(),
         type: 'Cataloged',
-        metdata: {
+        metadata: {
           traceId: transcoded.metadata.traceId
         },
         data: {}
@@ -217,8 +217,34 @@ function createComponent ({ messageStore }) {
   const moveFileEventHandlers = createMoveFileEventHandlers({ messageStore })
   const transcodeEventHandlers = createTranscodeEventHandlers({ messageStore })
 
+  const commandSubscription = messageStore.createSubscription({
+    streamName: 'videoCatalog:command',
+    handlers: commandHandlers,
+    subscriberId: 'videoCatalogCommandConsumer'
+  })
+  const eventSubscription = messageStore.createSubscription({
+    streamName: 'videoCatalog',
+    handlers: eventHandlers,
+    subscriberId: 'videoCatalogEventConsumer'
+  })
+  const moveFileEventSubscription = messageStore.createSubscription({
+    streamName: 'moveFile',
+    handlers: moveFileEventHandlers,
+    subscriberId: 'videoCatalogMoveFileEventConsumer'
+  })
+  const transcodeEventSubscription = messageStore.createSubscription({
+    streamName: 'transcode',
+    handlers: transcodeEventHandlers,
+    subscriberId: 'videoCatalogTranscodeEventConsumer'
+  })
+
   function start () {
     console.log('Starting video catalog component')
+
+    commandSubscription.start()
+    eventSubscription.start()
+    moveFileEventSubscription.start()
+    transcodeEventSubscription.start()
   }
 
   return {

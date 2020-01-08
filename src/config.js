@@ -33,7 +33,12 @@ function createConfig ({ env }) {
   // Aggregators
   const viewCountAggregator = createViewCountAggregator()
 
-  const components = [moveFileComponent, viewCountAggregator]
+  const components = [
+    moveFileComponent,
+    transcodeComponent,
+    videoCatalogComponent,
+    viewCountAggregator
+  ]
 
   return {
     components,

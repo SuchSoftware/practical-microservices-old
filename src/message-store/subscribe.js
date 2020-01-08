@@ -35,7 +35,7 @@ function configureCreateSubscription ({ read, readLastMessage, write }) {
 
       if (messagesSinceLastPositionWrite === positionUpdateInterval) {
         messagesSinceLastPositionWrite = 0
-        
+
         return writePosition(position)
       }
 
@@ -43,10 +43,9 @@ function configureCreateSubscription ({ read, readLastMessage, write }) {
     }
 
     function loadPosition () {
-      return readLastMessage(subscriberStreamName)
-        .then(message => {
-          currentPosition = message ? message.data.position : 0
-        })
+      return readLastMessage(subscriberStreamName).then(message => {
+        currentPosition = message ? message.data.position : 0
+      })
     }
 
     function getNextBatchOfMessages () {
@@ -69,8 +68,7 @@ function configureCreateSubscription ({ read, readLastMessage, write }) {
             // Re-throw so that we can break the chain
             throw err
           })
-      )
-        .then(() => messages.length)
+      ).then(() => messages.length)
     }
 
     function logError (lastMessage, error) {
@@ -123,7 +121,7 @@ function configureCreateSubscription ({ read, readLastMessage, write }) {
       // eslint-disable-next-line
       console.log(`Stopped ${subscriberId}`)
 
-      keepGoing = false
+      process.exit(1)
     }
 
     return {
