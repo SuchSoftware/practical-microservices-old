@@ -72,15 +72,34 @@ function createEventHandlers ({ messageStore }) {
       // 1. Load & project the video entity
       //   - You can get the streamName from moved.streamName
       const streamName = moved.streamName
+      const video = await messageStore.fetch(streamName)
 
       // 2. Our goal in this handler is to kick off the transcoding job.
       //   - Which property of the video entity do we use for idempotence
       //     in this step?
+      if (video.isTranscoded) {
+        console.log(`(${moved.id}) Video already transcoded. Skipping`)
+
+        return true
+      }
 
       // 3. If we haven't already handled it, write a Transcode command
       // for the transcode-component
+      const transcode = {
+        id: uuid(),
+        type: 'Transcode',
+        metdata: {
+          traceId: moved.metadata.traceId,
+          originStreamName: streamName
+        },
+        data: {
+          transcodeId: video.videoId,
+          source: moved.data.destination
+        }
+      }
+      const commandStreamName = `transcode:command-${video.videoId}`
 
-      return true
+      return messageStore.write(commandStreamName, transcode)
     }
   }
 }
@@ -114,7 +133,6 @@ function createMoveFileEventHandlers ({ messageStore }) {
           traceId: moved.metadata.traceId
         },
         data: {
-          videoId: video.id,
           destination: moved.data.destination
         }
       }
@@ -124,10 +142,51 @@ function createMoveFileEventHandlers ({ messageStore }) {
   }
 }
 
+function createTranscodeEventHandlers ({ messageStore }) {
+  return {
+    async Transcoded (transcoded) {
+      // 1. Make sure it's one of ours
+      const [originCategory, _] = transcoded.metadata.originStreamName.split(
+        '-'
+      )
+
+      if (originCategory !== 'videoCatalog') {
+        return true
+      }
+
+      // 2. Fetch the entity and make the handler idempotent
+      //   - Where can we find the streamName for the video entity?
+      const streamName = transcoded.metadata.originStreamName
+      const video = await messageStore.fetch(streamName, projection)
+
+      if (video.isTranscoded) {
+        console.log(`(${transcoded.id}) Video already transcoded. Skipping`)
+
+        return true
+      }
+
+      // 3. Write a Transcoded event to our stream
+      const videoTranscoded = {
+        id: uuid(),
+        type: 'Transcoded',
+        metadata: {
+          traceId: transcoded.metadata.traceId
+        },
+        data: {
+          transcodedUri: transcoded.data.transcodedUri
+        }
+      }
+
+      return messageStore.write(streamName, videoTranscoded)
+    }
+  }
+}
+
 function createComponent ({ messageStore }) {
   const commandHandlers = createCommandHandlers({ messageStore })
   const eventHandlers = createEventHandlers({ messageStore })
   const moveFileEventHandlers = createMoveFileEventHandlers({ messageStore })
+  const transcodeEventHandlers = createTranscodeEventHandlers({ messageStore })
 
   function start () {
     console.log('Starting video catalog component')
@@ -137,6 +196,7 @@ function createComponent ({ messageStore }) {
     commandHandlers,
     eventHandlers,
     moveFileEventHandlers,
+    transcodeEventHandlers,
     start
   }
 }
